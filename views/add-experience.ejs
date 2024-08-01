@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add New Experience</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+</head>
+
+<body>
+           <!-- Navbar -->
+           <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">My Experiences</a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item active">
+                            <a class="nav-link" href="/search">Search (Part 1)</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/add-experience">Add Experience</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/">Map Search(Part D)</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    <div class="container mt-5">
+        <h1>Add a New Experience</h1>
+        <form id="experienceForm">
+            <div class="form-group">
+                <label for="exp_name">Experience Name:</label>
+                <input type="text" class="form-control" id="exp_name" name="exp_name" required>
+            </div>
+
+            <div class="form-group">
+                <label for="exp_type">Experience Type:</label>
+                <input type="text" class="form-control" id="exp_type" name="exp_type" required>
+            </div>
+
+            <div class="form-group">
+                <label for="country">Country:</label>
+                <input type="text" class="form-control" id="country" name="country" required>
+            </div>
+
+            <div class="form-group">
+                <label for="region">Region:</label>
+                <input type="text" class="form-control" id="region" name="region" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lon">Longitude:</label>
+                <input type="text" class="form-control" id="lon" name="lon" required>
+            </div>
+
+            <div class="form-group">
+                <label for="lat">Latitude:</label>
+                <input type="text" class="form-control" id="lat" name="lat" required>
+            </div>
+
+            <div class="form-group">
+                <label for="exp_description">Description:</label>
+                <textarea class="form-control" id="exp_description" name="exp_description" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </form>
+    </div>
+
+    <script>
+        const experienceForm = document.getElementById("experienceForm");
+
+        experienceForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const formData = {
+                exp_name: document.getElementById("exp_name").value,
+                exp_type: document.getElementById("exp_type").value,
+                country: document.getElementById("country").value,
+                region: document.getElementById("region").value,
+                lon: document.getElementById("lon").value,
+                lat: document.getElementById("lat").value,
+                exp_description: document.getElementById("exp_description").value,
+            };
+            // const formData = new FormData(experienceForm);
+
+            fetch("/add-experience", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json", // Set the content type to JSON
+                },
+                body: JSON.stringify(formData), // Convert formData to JSON
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    // Handle the response (success or error) here
+                    if (data.message) {
+                        alert(data.message);
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        });
+    </script>
+
+    <!-- Include Bootstrap JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Activities by Region</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+    <!-- Include Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">My Experiences</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/search">Search (Part 1)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/add-experience">Add Experience</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Map Search(Part D)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1 class="mb-4">Search for Activities by Region</h1>
+        <div class="input-group mb-3">
+            <input type="text" id="regionInput" class="form-control" placeholder="Enter a region">
+            <div class="input-group-append">
+                <button id="searchButton" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+
+        <!-- Message for no data -->
+        <div id="noDataMessage" class="alert alert-info d-none">
+            No activities found in the specified region.
+        </div>
+        <!-- Map to display search results -->
+        <div id="map" style="height: 400px;" class="mb-5"></div>
+
+
+    </div>
+
+    <script>
+        const searchButton = document.getElementById("searchButton");
+        const regionInput = document.getElementById("regionInput");
+        const noDataMessage = document.getElementById("noDataMessage");
+        const mapDiv = document.getElementById("map");
+        const addExperienceForm = document.getElementById("addExperienceForm");
+
+        let addNewExperienceForm = `
+        <div id="addExperienceForm" class="">
+            <h2>Add a New Experience</h2>
+            <form id="experienceForm" onsubmit="submitAddNewExperienceForm(event)">
+                <div class="form-group">
+                    <label for="exp_name">Experience Name:</label>
+                    <input type="text" class="form-control" id="exp_name" name="exp_name" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="exp_type">Experience Type:</label>
+                    <input type="text" class="form-control" id="exp_type" name="exp_type" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="country">Country:</label>
+                    <input type="text" class="form-control" id="country" name="country" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="region">Region:</label>
+                    <input type="text" class="form-control" id="region" name="region" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lon">Longitude:</label>
+                    <input type="text" class="form-control" id="lon" name="lon" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lat">Latitude:</label>
+                    <input type="text" class="form-control" id="lat" name="lat" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="exp_description">Description:</label>
+                    <textarea class="form-control" id="exp_description" name="exp_description" required></textarea>
+                </div>
+
+                <!-- Add more form fields for Experience details here -->
+
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+        `;
+
+        // Create a Leaflet map
+        const map = L.map("map").setView([0, 0], 0); // Initial view, adjust as needed
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        }).addTo(map);
+
+        let popup = L.popup();
+        popup.setContent(addNewExperienceForm);
+
+        // Function to fetch country and region based on coordinates
+        async function fetchCountryRegion(lat, lng) {
+            try {
+                const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                const data = await response.json();
+
+                if (data.address) {
+                    console.log(data);
+                    document.getElementById("country").value = data.address.country || "";
+                    if (data.address.city) {
+                        document.getElementById("region").value = data.address.city;
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        // Event listener for map clicks
+        map.on("click", (e) => {
+            popup.setLatLng(e.latlng);
+            popup.openOn(map);
+            // Display the addExperienceForm and populate latitude and longitude fields
+            console.log(e.latlng);
+            document.getElementById("lat").value = e.latlng.lat.toFixed(6);
+            document.getElementById("lon").value = e.latlng.lng.toFixed(6);
+            document.getElementById("region").value = document.getElementById("regionInput").value;
+
+            // Fetch country and region based on coordinates
+            const { lat, lng } = e.latlng;
+            fetchCountryRegion(lat, lng);
+        });
+
+
+        const submitAddNewExperienceForm = (e) => {
+            e.preventDefault();
+            const experienceForm = e.target;
+            const formData = new FormData(experienceForm);
+
+            const urlEncodedString = new URLSearchParams(formData).toString();
+            // Send the data to your REST API
+            fetch("/add-experience", {
+                method: "POST",
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: urlEncodedString,
+            })
+                .then((response) => response.json())
+                .then((data) => {
+                    // Handle the response (success or error) here
+                    if (data.message) {
+                        alert(data.message);
+                        // Add a marker to the map if the API call is successful
+                        if (data.success) {
+                            const lat = parseFloat(formData.get("lat"));
+                            const lon = parseFloat(formData.get("lon"));
+                            L.marker([lat, lon])
+                                .addTo(map)
+                                .bindPopup(`<b>${formData.get("exp_name")}</b><br>${formData.get("exp_description")}`);
+                        }
+                    } else {
+                        alert(data.error);
+                    }
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        };
+
+        searchButton.addEventListener("click", () => {
+            const region = regionInput.value.trim();
+            if (region) {
+                fetch(`/activities/${region}`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.length === 0) {
+                            // No data found, display the no data message
+                            noDataMessage.classList.remove("d-none");
+                            // Reset the map's view to a default location
+                            // Remove existing markers from the map
+                            map.eachLayer((layer) => {
+                                if (layer instanceof L.Marker) {
+                                    map.removeLayer(layer);
+                                }
+                            });
+                            map.setView([0, 0], 0); // Adjust as needed
+                        } else {
+                            // Clear the no data message
+                            noDataMessage.classList.add("d-none");
+                            // Remove existing markers from the map
+                            map.eachLayer((layer) => {
+                                if (layer instanceof L.Marker) {
+                                    map.removeLayer(layer);
+                                }
+                            });
+
+                            // Add markers for each result
+                            data.forEach((item) => {
+                                L.marker([item.lat, item.lon])
+                                    .addTo(map)
+                                    .bindPopup(`<b>${item.exp_name}</b><br>${item.exp_description}`);
+                            });
+
+                            // Fit the map view to display all markers
+                            const markerGroup = L.featureGroup(data.map(item => L.marker([item.lat, item.lon])));
+                            map.fitBounds(markerGroup.getBounds());
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        });
+    </script>
+
+    <!-- Include Bootstrap JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.min.js"></script>
+</body>
+
+</html>

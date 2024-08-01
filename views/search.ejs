@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Activities by Region</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+   
+</head>
+
+<body>
+       <!-- Navbar -->
+       <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">My Experiences</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="#">Search (Part 1)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/add-experience">Add Experience</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Map Search(Part D)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1 class="mb-4">Search for Activities by Region</h1>
+        <div class="input-group mb-3">
+            <input type="text" id="regionInput" class="form-control" placeholder="Enter a region">
+            <div class="input-group-append">
+                <button id="searchButton" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+
+        <!-- Table to display search results -->
+        <div class="table-responsive">
+            <table id="experiences-table" class="table table-bordered table-hover d-none">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Experience Name</th>
+                        <th>Experience Type</th>
+                        <th>Country</th>
+                        <th>Region</th>
+                        <th>Description</th>
+                        <th>Book</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody">
+                    <!-- Table rows will be added here dynamically -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Message for no data -->
+        <div id="noDataMessage" class="alert alert-info d-none">
+            No activities found in the specified region.
+        </div>
+    </div>
+
+    <script>
+        const searchButton = document.getElementById("searchButton");
+        const regionInput = document.getElementById("regionInput");
+        const resultsTableBody = document.getElementById("resultsTableBody");
+        const noDataMessage = document.getElementById("noDataMessage");
+        const experiencesTable = document.getElementById("experiences-table");
+
+        searchButton.addEventListener("click", () => {
+            const region = regionInput.value.trim();
+            if (region) {
+                fetch(`/activities/${region}`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        experiencesTable.classList.remove("d-none");
+                        if (data.length === 0) {
+                            // No data found, display the no data message
+                            noDataMessage.classList.remove("d-none");
+
+                            resultsTableBody.innerHTML = "";
+                        } else {
+                            // Clear the no data message and populate the table
+                            noDataMessage.classList.add("d-none");
+                            resultsTableBody.innerHTML = "";
+                            data.forEach((item) => {
+                                // Create a table row for each result
+                                const row = document.createElement("tr");
+                                row.innerHTML = `
+                                    <td>${item.exp_name}</td>
+                                    <td>${item.exp_type}</td>
+                                    <td>${item.country}</td>
+                                    <td>${item.region}</td>
+                                    <td>${item.exp_description}</td>
+                                    <td><button class="btn btn-success" expId="${item.id}">Book</button></td>
+                                `;
+                                resultsTableBody.appendChild(row);
+
+                            });
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        });
+        // Event listener for "Book" button clicks
+        resultsTableBody.addEventListener("click", (e) => {
+            if (e.target.classList.contains("btn-success")) {
+                // Extract the experience ID from the button's expId attribute
+                const experienceID = e.target.getAttribute("expId");
+
+                // Send a POST request to book the experience
+                fetch(`/book-experience/${experienceID}`, {
+                    method: "POST",
+                })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        // Handle the response (success or error) here
+                        if (data.message) {
+                            alert(data.message);
+                        } else {
+                            alert(data.error);
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        });
+    </script>
+
+    <!-- Include Bootstrap JS  -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Activities by Region</title>
+    <!-- Include Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap/dist/css/bootstrap.min.css">
+    <!-- Include Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">My Experiences</a>
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item active">
+                        <a class="nav-link" href="/search">Search (Part 1)</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/add-experience">Add Experience</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">Map Search(Part D)</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <div class="container mt-5">
+        <h1 class="mb-4">Search for Activities by Region</h1>
+        <div class="input-group mb-3">
+            <input type="text" id="regionInput" class="form-control" placeholder="Enter a region">
+            <div class="input-group-append">
+                <button id="searchButton" class="btn btn-primary">Search</button>
+            </div>
+        </div>
+
+        <!-- Map to display search results -->
+        <div id="map" style="height: 400px;" class="d-none"></div>
+
+        <!-- Message for no data -->
+        <div id="noDataMessage" class="alert alert-info d-none">
+            No activities found in the specified region.
+        </div>
+    </div>
+
+    <script>
+        const searchButton = document.getElementById("searchButton");
+        const regionInput = document.getElementById("regionInput");
+        const noDataMessage = document.getElementById("noDataMessage");
+        const mapDiv = document.getElementById("map");
+
+        // Create a Leaflet map
+        const map = L.map("map").setView([0, 0], 2); // Initial view, adjust as needed
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+        searchButton.addEventListener("click", () => {
+            const region = regionInput.value.trim();
+            if (region) {
+                fetch(`/activities/${region}`)
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (data.length === 0) {
+                            // No data found, display the no data message
+                            noDataMessage.classList.remove("d-none");
+                            //Hide the map
+                            mapDiv.classList.add("d-none");
+                        } else {
+                            // Clear the no data message
+                            noDataMessage.classList.add("d-none");
+                            // Display the map if data is found
+                            mapDiv.classList.remove("d-none");
+
+                            // Remove existing markers from the map
+                            map.eachLayer((layer) => {
+                                if (layer instanceof L.Marker) {
+                                    map.removeLayer(layer);
+                                }
+                            });
+
+                            // Add markers for each result
+                            data.forEach((item) => {
+                                L.marker([item.lat, item.lon])
+                                    .addTo(map)
+                                    .bindPopup(`<b>${item.exp_name}</b><br>${item.exp_description}`);
+                            });
+
+                            // Fit the map view to display all markers
+                            const markerGroup = L.featureGroup(data.map(item => L.marker([item.lat, item.lon])));
+                            map.fitBounds(markerGroup.getBounds());
+                        }
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    });
+            }
+        });
+    </script>
+
+    <!-- Include Bootstrap JS (optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap/dist/js/bootstrap.min.js"></script>
+</body>
+
+</html>
